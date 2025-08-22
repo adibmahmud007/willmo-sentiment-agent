@@ -1,0 +1,93 @@
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.venv*/
+.python-version
+.conda/
+
+# Distribution / packaging
+build/
+dist/
+wheels/
+pip-wheel-metadata/
+*.egg-info/
+.eggs/
+*.egg
+MANIFEST
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# Type checkers / linters
+.mypy_cache/
+.pyre/
+.pytype/
+.ruff_cache/
+
+# IDE / editor
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and runtime
+logs/
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Local environment files
+.env
+.env.*
+.envrc
+
+# Local databases / data files
+*.sqlite
+*.sqlite3
+*.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Temporary files
+/tmp/
+/tmp/**
+tmp/
+.temp/
+*.tmp
+*.temp
+
+# Swap files
+*.swp
+*.swo
+
+# Optional: media/output directories (uncomment as needed)
+# output/
+# data/
+# uploads/
+# media/
