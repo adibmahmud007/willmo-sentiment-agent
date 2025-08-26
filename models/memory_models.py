@@ -5,6 +5,7 @@ from datetime import datetime
 class ConversationEntry(BaseModel):
     timestamp: datetime
     user_message: str
+    age: str  # Always store age
     ai_response: str
     message_type: str = "text"  # "text" or "voice"
     transcribed_text: str = ""  # Only for voice messages

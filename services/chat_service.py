@@ -11,10 +11,11 @@ class ChatService:
         self.groq_service = groq_service
         self.memory_service = memory_service
     
-    async def process_chat(self, user_id: str, message: str, message_type: str = "text", transcribed_text: str = "") -> ChatResponse:
+    async def process_chat(self, user_id: str, age: str, message: str, message_type: str = "text", transcribed_text: str = "") -> ChatResponse:
         """Process a chat request with memory integration"""
         try:
             user_id = user_id
+            age = age
             user_message = message
             
             logger.info(f"Processing {message_type} chat for user: {user_id}")
@@ -24,11 +25,12 @@ class ChatService:
             logger.info(f"Retrieved memory context for user: {user_id}")
             
             # Step 2: Generate AI response with memory context
-            ai_response = self.groq_service.generate_response(user_message, memory_context)
+            ai_response = self.groq_service.generate_response(user_message,age, memory_context)
             
             # Step 3: Add conversation to memory
             memory_updated = self.memory_service.add_conversation(
                 user_id=user_id,
+                age=age,
                 user_message=user_message,
                 ai_response=ai_response,
                 message_type=message_type,
@@ -39,6 +41,7 @@ class ChatService:
             response = ChatResponse(
                 response=ai_response,
                 user_id=user_id,
+                age=age,
                 timestamp=datetime.now(),
                 memory_updated=memory_updated
             )
@@ -52,6 +55,7 @@ class ChatService:
             return ChatResponse(
                 response="I'm sorry, something went wrong. Please try again.",
                 user_id=user_id,
+                age=age,
                 timestamp=datetime.now(),
                 memory_updated=False
             )

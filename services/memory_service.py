@@ -16,11 +16,10 @@ class MemoryService:
         self.user_memories: Dict[str, UserMemory] = {}
     
     def get_user_memory(self, user_id: str) -> UserMemory:
-        """Get or create user memory"""
+        """Get or create user memory (age ignored at this level)"""
         if user_id not in self.user_memories:
             self.user_memories[user_id] = UserMemory(user_id=user_id)
             logger.info(f"Created new memory for user: {user_id}")
-        
         return self.user_memories[user_id]
     
     def get_memory_context(self, user_id: str) -> str:
@@ -36,84 +35,60 @@ class MemoryService:
         if memory.recent_conversations:
             context += "Recent conversations:\n"
             for i, conv in enumerate(memory.recent_conversations[-5:], 1):  # Last 5 recent
-                # Format timestamp
                 time_str = conv.timestamp.strftime("%Y-%m-%d %H:%M")
-                
-                # Add conversation
                 if conv.message_type == "voice" and conv.transcribed_text:
-                    context += f"{i}. [{time_str}] User (voice): {conv.transcribed_text}\n"
+                    context += f"{i}. [{time_str}] User (age {conv.age}, voice): {conv.transcribed_text}\n"
                 else:
-                    context += f"{i}. [{time_str}] User: {conv.user_message}\n"
-                
+                    context += f"{i}. [{time_str}] User (age {conv.age}): {conv.user_message}\n"
                 context += f"   AI: {conv.ai_response[:200]}{'...' if len(conv.ai_response) > 200 else ''}\n\n"
         
-        # Add some archived context if recent is limited
         if len(memory.recent_conversations) < 3 and memory.archived_conversations:
             context += "Earlier context:\n"
-            for conv in memory.archived_conversations[-2:]:  # Last 2 archived
+            for conv in memory.archived_conversations[-2:]:
                 time_str = conv.timestamp.strftime("%Y-%m-%d")
                 if conv.message_type == "voice" and conv.transcribed_text:
-                    context += f"- [{time_str}] User asked (voice): {conv.transcribed_text[:100]}...\n"
+                    context += f"- [{time_str}] User (age {conv.age}) asked (voice): {conv.transcribed_text[:100]}...\n"
                 else:
-                    context += f"- [{time_str}] User asked: {conv.user_message[:100]}...\n"
-        
+                    context += f"- [{time_str}] User (age {conv.age}) asked: {conv.user_message[:100]}...\n"
         return context.strip()
     
     def add_conversation(
         self, 
         user_id: str, 
+        age: str,
         user_message: str, 
         ai_response: str, 
         message_type: str = "text",
         transcribed_text: str = ""
     ) -> bool:
-        """Add new conversation to user memory"""
+        """Add new conversation to user memory. Age is captured per conversation only."""
         memory = self.get_user_memory(user_id)
         
-        # Check if conversation is worth remembering (for text messages)
-        if message_type == "text" and not is_important_conversation(user_message, ai_response):
-            logger.info(f"Skipping trivial conversation for user: {user_id}")
-            return False
-        
-        # For voice messages, always store (since user made effort to record)
-        
-        # Create conversation entry
         conversation = ConversationEntry(
             timestamp=datetime.now(),
             user_message=clean_text(user_message),
+            age=age,
             ai_response=clean_text(ai_response),
             message_type=message_type,
             transcribed_text=clean_text(transcribed_text) if transcribed_text else ""
         )
-        
-        # Add to recent conversations
         memory.recent_conversations.append(conversation)
         memory.conversation_count += 1
         memory.last_updated = datetime.now()
-        
-        # Optimize memory if needed
         self._optimize_memory(memory)
-        
         logger.info(f"Added {message_type} conversation for user: {user_id} (total: {memory.conversation_count})")
         return True
     
     def _optimize_memory(self, memory: UserMemory):
-        """Optimize memory by moving old conversations to archive"""
-        # If recent conversations exceed limit, move oldest to archived
         if len(memory.recent_conversations) > config.MAX_RECENT_MEMORIES:
-            # Move oldest recent conversations to archived
             to_archive = memory.recent_conversations[:-config.MAX_RECENT_MEMORIES]
             memory.archived_conversations.extend(to_archive)
             memory.recent_conversations = memory.recent_conversations[-config.MAX_RECENT_MEMORIES:]
-        
-        # If archived conversations exceed limit, remove oldest
         if len(memory.archived_conversations) > config.MAX_ARCHIVED_MEMORIES:
             memory.archived_conversations = memory.archived_conversations[-config.MAX_ARCHIVED_MEMORIES:]
-        
         logger.info(f"Memory optimized - Recent: {len(memory.recent_conversations)}, Archived: {len(memory.archived_conversations)}")
     
     def clear_user_memory(self, user_id: str) -> bool:
-        """Clear all memory for a user"""
         if user_id in self.user_memories:
             del self.user_memories[user_id]
             logger.info(f"Cleared memory for user: {user_id}")
@@ -121,15 +96,9 @@ class MemoryService:
         return False
     
     def get_memory_stats(self, user_id: str) -> Dict:
-        """Get memory statistics for a user"""
         memory = self.get_user_memory(user_id)
-        
-        # Count message types
-        text_count = sum(1 for conv in memory.recent_conversations + memory.archived_conversations 
-                        if conv.message_type == "text")
-        voice_count = sum(1 for conv in memory.recent_conversations + memory.archived_conversations 
-                         if conv.message_type == "voice")
-        
+        text_count = sum(1 for conv in memory.recent_conversations + memory.archived_conversations if conv.message_type == "text")
+        voice_count = sum(1 for conv in memory.recent_conversations + memory.archived_conversations if conv.message_type == "voice")
         return {
             "user_id": user_id,
             "recent_conversations": len(memory.recent_conversations),
@@ -141,16 +110,14 @@ class MemoryService:
         }
     
     def get_conversation_history(self, user_id: str, limit: int = 50) -> List[Dict]:
-        """Get raw conversation history as JSON for debugging"""
         memory = self.get_user_memory(user_id)
-        
         all_conversations = memory.recent_conversations + memory.archived_conversations
-        all_conversations.sort(key=lambda x: x.timestamp, reverse=True)  # Most recent first
-        
+        all_conversations.sort(key=lambda x: x.timestamp, reverse=True)
         return [
             {
                 "timestamp": conv.timestamp.isoformat(),
                 "user_message": conv.user_message,
+                "age": getattr(conv, 'age', None),
                 "ai_response": conv.ai_response,
                 "message_type": conv.message_type,
                 "transcribed_text": conv.transcribed_text
@@ -158,5 +125,4 @@ class MemoryService:
             for conv in all_conversations[:limit]
         ]
 
-# Initialize global memory service
 memory_service = MemoryService()

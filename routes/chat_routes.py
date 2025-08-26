@@ -14,12 +14,14 @@ router = APIRouter(prefix="/api", tags=["Chat"])
 @router.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(
     user_id: str =Form(...),
+    age: str =Form(...),
     message: str =Form(...)
 ):
     """
     Text-based chat endpoint
     
     - **user_id**: Unique identifier for the user
+    - **age**: Age of the user
     - **message**: User's message to the chatbot
     
     Returns AI response with JSON memory integration
@@ -27,13 +29,13 @@ async def chat_endpoint(
     try:
         logger.info(f"Text chat request from user: {user_id}")
         
-        if not user_id or not message.strip():
+        if not user_id or not age or not message.strip():
             raise HTTPException(
                 status_code=400, 
                 detail="user_id and message are required"
             )
         
-        response = await chat_service.process_chat(user_id, message, message_type="text")
+        response = await chat_service.process_chat(user_id,age, message, message_type="text")
         return response
         
     except HTTPException:
@@ -45,12 +47,14 @@ async def chat_endpoint(
 @router.post("/voice-chat", response_model=VoiceChatResponse)
 async def voice_chat_endpoint(
     user_id: str = Form(...),
+    age: str = Form(...),
     audio_file: UploadFile = File(...)
 ):
     """
     Voice-based chat endpoint
     
     - **user_id**: Unique identifier for the user
+    - **age**: Age of the user
     - **audio_file**: Audio file (mp3, wav, m4a, etc.) containing user's voice message
     
     Process: Audio → Speech-to-Text → AI Response → JSON Memory Storage
@@ -96,11 +100,12 @@ async def voice_chat_endpoint(
         logger.info(f"Successfully transcribed: {transcribed_text[:100]}...")
         
         # Create chat request with transcribed text
-        chat_request = ChatRequest(user_id=user_id, message=transcribed_text)
+        chat_request = ChatRequest(user_id=user_id, message=transcribed_text, age=age)
         
         # Process chat with AI (voice type with transcription)
         chat_response = await chat_service.process_chat(
             user_id=user_id,
+            age=age,
             message=transcribed_text,
             message_type="voice", 
             transcribed_text=transcribed_text
@@ -111,6 +116,7 @@ async def voice_chat_endpoint(
             transcribed_text=transcribed_text,
             ai_response=chat_response.response,
             user_id=user_id,
+            age=age,
             timestamp=datetime.now(),
             memory_updated=chat_response.memory_updated,
             transcription_success=True

@@ -27,6 +27,7 @@ async def get_user_memory(user_id: str):
             {
                 "timestamp": conv.timestamp.isoformat(),
                 "user_message": conv.user_message,
+                "age": getattr(conv, 'age', None),
                 "ai_response": conv.ai_response,
                 "message_type": conv.message_type,
                 "transcribed_text": conv.transcribed_text
@@ -38,6 +39,7 @@ async def get_user_memory(user_id: str):
             {
                 "timestamp": conv.timestamp.isoformat(),
                 "user_message": conv.user_message,
+                "age": getattr(conv, 'age', None),
                 "ai_response": conv.ai_response,
                 "message_type": conv.message_type,
                 "transcribed_text": conv.transcribed_text
