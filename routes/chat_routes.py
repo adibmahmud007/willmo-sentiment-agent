@@ -100,7 +100,8 @@ async def voice_chat_endpoint(
         
         # Process chat with AI (voice type with transcription)
         chat_response = await chat_service.process_chat(
-            chat_request, 
+            user_id=user_id,
+            message=transcribed_text,
             message_type="voice", 
             transcribed_text=transcribed_text
         )

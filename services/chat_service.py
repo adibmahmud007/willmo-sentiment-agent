@@ -51,7 +51,7 @@ class ChatService:
             # Return error response
             return ChatResponse(
                 response="I'm sorry, something went wrong. Please try again.",
-                user_id=chat_request.user_id,
+                user_id=user_id,
                 timestamp=datetime.now(),
                 memory_updated=False
             )
