@@ -24,7 +24,7 @@ class GroqService:
             return "⚠️ Please set your GROQ_API_KEY in the .env file. Get your free API key from: https://console.groq.com"
         
         if not self.client:
-            return "❌ Groq client initialization failed. Please check your API key and internet connection."
+            return " Groq client initialization failed. Please check your API key and internet connection."
         
         try:
             # Create system prompt with memory context and age
@@ -121,11 +121,11 @@ GLOBAL RULES:
         except Exception as e:
             logger.error(f"Error generating response with Groq: {str(e)}")
             if "authentication" in str(e).lower() or "api_key" in str(e).lower():
-                return "🔑 Authentication failed. Please check your GROQ_API_KEY in the .env file."
+                return " Authentication failed. Please check your GROQ_API_KEY in the .env file."
             elif "rate_limit" in str(e).lower():
-                return "⏳ Rate limit reached. Please try again in a moment."
+                return " Rate limit reached. Please try again in a moment."
             else:
-                return f"❌ I'm having trouble processing your request: {str(e)}"
+                return f" I'm having trouble processing your request: {str(e)}"
 
 # Initialize global Groq service
 groq_service = GroqService()
